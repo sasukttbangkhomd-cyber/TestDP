@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroWeather Live - แผนที่ลมและสภาพอากาศ WindytStyle & กล้องเขื่อน</title>
+    <title>HydroWeather Live - แผนที่ลมและสภาพอากาศ Windy Style & กล้องเขื่อน</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
@@ -17,12 +17,6 @@
                 extend: {
                     fontFamily: {
                         sans: ['Prompt', 'Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        glass: {
-                            light: 'rgba(255, 255, 255, 0.65),',
-                            dark: 'rgba(15, 23, 42, 0.85)',
-                        }
                     }
                 }
             }
@@ -74,7 +68,7 @@
                     </div>
                     <div>
                         <h1 class="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-blue-100 to-cyan-300 bg-clip-text text-transparent">HydroWeather Live</h1>
-                        <p class="text-xs text-blue-200/80 font-medium">ระบบสภาพอากาศเรอัลไทม์ (Windy Style & Dam CCTVs)</p>
+                        <p class="text-xs text-blue-200/80 font-medium">ระบบสภาพอากาศเรียลไทม์ (Windy Style & Dam CCTVs)</p>
                     </div>
                 </div>
                 <!-- Mobile unit toggle -->
@@ -362,7 +356,7 @@
                             <i data-lucide="video" class="w-6 h-6 text-cyan-300"></i>
                             <span>กล้องวงจรปิดถ่ายทอดสด 24 ชม. (CCTV Live Feeds) เขื่อนและอ่างเก็บน้ำสำคัญ</span>
                         </h3>
-                        <p class="text-xs text-blue-200/80 mt-1">รับชมภาพสตรีมมิ่งสดจากกล้องวงจรปิดเขื่อนหลักทั่วประเทศ พร้อมตรวจสอบสภาพอากาศและระดับน้ำประกอบ</p>
+                        <p class="text-xs text-blue-200/80 mt-1">รับชมภาพสตรีมมิ่งสดและลิงก์เชื่อมต่อระบบกล้อง CCTV ของเขื่อนหลักทั่วประเทศ</p>
                     </div>
 
                     <!-- Dam CCTV Selector Pills -->
@@ -374,11 +368,11 @@
                 <!-- Main CCTV Player & Details Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
-                    <!-- Left (2 cols): Video Player Simulation -->
+                    <!-- Left (2 cols): Video Player Simulation & Direct Link Button -->
                     <div class="lg:col-span-2 space-y-4">
                         <div class="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-white/20 shadow-2xl flex items-center justify-center group">
                             <!-- Simulated Live Video Stream Image with overlay -->
-                            <img id="cctvImage" src="https://placehold.co/1280x720/1e293b/38bdf8?text=CCTV+Live+Stream+-+Bhumibol+Dam" alt="CCTV Live" class="w-full h-full object-cover opacity-90 transition-all duration-700">
+                            <img id="cctvImage" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1280&q=80" alt="CCTV Live" class="w-full h-full object-cover opacity-90 transition-all duration-700">
                             
                             <!-- Live Indicator Badge -->
                             <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-xs font-semibold">
@@ -388,16 +382,20 @@
 
                             <!-- Timestamp Badge -->
                             <div class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-xs font-mono text-cyan-300" id="cctvTimestamp">
-                                2026-10-01 11:46:42
+                                2026-10-01 14:39:41
                             </div>
 
                             <!-- Bottom video overlay info -->
-                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-5 flex items-center justify-between">
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                 <div>
                                     <h4 id="cctvTitle" class="font-bold text-base text-white">เขื่อนภูมิพล (ตาก) - จุดระบายน้ำหลัก</h4>
                                     <p id="cctvSubLocation" class="text-xs text-blue-200/80">มุมกล้อง 01: อาคารโรงไฟฟ้าพลังน้ำ</p>
                                 </div>
-                                <div class="flex items-center space-x-2">
+                                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                    <a id="externalCctvLink" href="https://www.thaiwater.net" target="_blank" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl text-xs font-semibold shadow-md transition-all flex items-center space-x-1.5">
+                                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                        <span>เปิดสตรีมกล้องจริง (ทางการ)</span>
+                                    </a>
                                     <button onclick="refreshCctvStream()" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-white backdrop-blur-md border border-white/20 transition-all" title="รีเฟรชภาพสตรีม">
                                         <i data-lucide="rotate-cw" class="w-4 h-4"></i>
                                     </button>
@@ -662,7 +660,7 @@
             }
         ];
 
-        // CCTV Data Store
+        // CCTV Data Store with Official Links
         const cctvDB = {
             bhumibol: {
                 name: "เขื่อนภูมิพล (ตาก)",
@@ -673,6 +671,7 @@
                 inflow: "+12.4 ลบ.ม./วินาที",
                 outflow: "5.0 ลบ.ม./วินาที",
                 weather: "แจ่มใส 31°C",
+                externalUrl: "https://www.thaiwater.net",
                 angles: [
                     { name: "สันเขื่อนหลัก", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1280&q=80" },
                     { name: "อาคารระบายน้ำ", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1280&q=80" },
@@ -688,6 +687,7 @@
                 inflow: "+9.8 ลบ.ม./วินาที",
                 outflow: "4.2 ลบ.ม./วินาที",
                 weather: "มีเมฆบางส่วน 29°C",
+                externalUrl: "https://www.thaiwater.net",
                 angles: [
                     { name: "อ่างเก็บน้ำหลัก", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1280&q=80" },
                     { name: "สันเขื่อนดิน", img: "https://images.unsplash.com/photo-1426604966848-d7adacbd02bff?auto=format&fit=crop&w=1280&q=80" },
@@ -703,6 +703,7 @@
                 inflow: "+24.5 ลบ.ม./วินาที",
                 outflow: "18.0 ลบ.ม./วินาที",
                 weather: "แดดจัด 34°C",
+                externalUrl: "https://www.thaiwater.net",
                 angles: [
                     { name: "ประตูระบายน้ำ", img: "https://images.unsplash.com/photo-1511497584788-876761142197?auto=format&fit=crop&w=1280&q=80" },
                     { name: "ท้ายเขื่อน", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80" },
@@ -718,6 +719,7 @@
                 inflow: "+5.1 ลบ.ม./วินาที",
                 outflow: "2.0 ลบ.ม./วินาที",
                 weather: "แจ่มใส 33°C",
+                externalUrl: "https://www.thaiwater.net",
                 angles: [
                     { name: "สะพานลอยน้ำ", img: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1280&q=80" },
                     { name: "สันเขื่อนคอนกรีต", img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1280&q=80" },
@@ -912,12 +914,10 @@
             let lat = 13.756;
             let lon = 100.502;
             
-            // Update iframe src with selected overlay
             iframe.src = `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&detailLat=${lat}&detailLon=${lon}&width=650&height=450&zoom=6&level=surface&overlay=${layerType}&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=true&metricWind=default&metricTemp=default`;
             
             document.getElementById('currentLayerLabel').innerText = `แสดงผลเลเยอร์: ${labelText} (Windy.com API)`;
 
-            // Highlight button
             ['wind', 'rain', 'temp', 'clouds'].forEach(l => {
                 const btn = document.getElementById(`layer-${l}`);
                 if (l === layerType) {
@@ -959,8 +959,8 @@
             document.getElementById('cctvInflow').innerText = cctv.inflow;
             document.getElementById('cctvOutflow').innerText = cctv.outflow;
             document.getElementById('cctvWeather').innerText = cctv.weather;
+            document.getElementById('externalCctvLink').href = cctv.externalUrl;
 
-            // Render camera angle buttons
             const anglesContainer = document.getElementById('cctvAnglesContainer');
             anglesContainer.innerHTML = '';
             cctv.angles.forEach((angle, idx) => {
@@ -1048,7 +1048,6 @@
             renderDashboard(currentStationKey);
         }
 
-        // Custom Toast Notification
         function showToast(message) {
             const toast = document.createElement('div');
             toast.className = 'fixed bottom-5 right-5 z-50 glass-card-dark px-5 py-3 rounded-2xl border border-cyan-400/40 text-white text-xs font-semibold shadow-2xl flex items-center space-x-2 animate-fade-in';
