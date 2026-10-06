@@ -1,485 +1,1068 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydroWeather Live - ระบบติดตามสภาพอากาศและมวลน้ำเรียลไทม์</title>
+    <title>HydroWeather Live - แผนที่ลมและสภาพอากาศ Windy Style & กล้องเขื่อน</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Google Fonts (Prompt) -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Prompt', sans-serif; }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+    <!-- Google Fonts (Prompt & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Prompt', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
         }
-        .dark .glass-panel {
-            background: rgba(15, 23, 42, 0.85);
+    </script>
+    <style>
+        body {
+            font-family: 'Prompt', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #090d16 0%, #172554 50%, #042f2e 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-card-dark {
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .animate-pulse-slow {
-            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-900 min-h-screen text-slate-800 dark:text-slate-100 pb-20">
+<body class="text-white antialiased selection:bg-blue-500 selection:text-white pb-12">
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-50 glass-panel shadow-md px-4 py-3">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 text-white p-2 rounded-xl shadow-lg">
-                    <i data-lucide="waves" class="w-6 h-6"></i>
+    <!-- App Container -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        
+        <!-- Header Navigation -->
+        <header class="glass-card rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300">
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-gradient-to-tr from-blue-500 to-cyan-400 rounded-2xl shadow-lg shadow-blue-500/30">
+                        <i data-lucide="wind" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-white via-blue-100 to-cyan-300 bg-clip-text text-transparent">HydroWeather Live</h1>
+                        <p class="text-xs text-blue-200/80 font-medium">ระบบสภาพอากาศเรียลไทม์ (Windy Style & Dam CCTVs)</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">HydroWeather Live</h1>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">ระบบสภาพอากาศและมวลน้ำประเทศไทย (ThaiWater)</p>
+                <!-- Mobile unit toggle -->
+                <div class="flex md:hidden items-center bg-white/10 rounded-xl p-1 border border-white/20">
+                    <button id="unitBtnMob" onclick="toggleUnit()" class="px-3 py-1 text-xs font-bold rounded-lg bg-white/20 text-white shadow-sm transition-all">°C</button>
                 </div>
             </div>
 
-            <!-- Search & Controls -->
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <div class="relative flex-1 sm:w-64">
-                    <input type="text" id="searchInput" placeholder="ค้นหาจังหวัด, เขื่อน, ประตูน้ำ..." 
-                        class="w-full pl-9 pr-4 py-1.5 text-sm rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <!-- Search and Controls -->
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                <div class="relative flex-1 md:w-72">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-200">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="citySearch" placeholder="ค้นหาจังหวัด หรือ เขื่อน..." 
+                        class="w-full pl-10 pr-4 py-2.5 bg-white/10 border border-white/20 rounded-2xl text-sm placeholder-blue-200/60 text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 backdrop-blur-md transition-all">
                 </div>
-                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition" title="สลับโหมดมืด/สว่าง">
-                    <i data-lucide="moon" class="w-4 h-4"></i>
+                
+                <button onclick="searchLocation()" class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm font-semibold rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center space-x-2">
+                    <i data-lucide="compass" class="w-4 h-4"></i>
+                    <span>ค้นหา</span>
                 </button>
+
+                <!-- Desktop unit toggle -->
+                <div class="hidden md:flex items-center bg-white/10 rounded-2xl p-1 border border-white/20">
+                    <button id="unitBtn" onclick="toggleUnit()" class="px-4 py-2 text-xs font-bold rounded-xl bg-white/25 text-white shadow-md transition-all">°C / องศาเซลเซียส</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs for Switching Views -->
+        <div class="flex items-center space-x-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
+            <button onclick="switchTab('dashboard')" id="tabBtn-dashboard" class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25 border border-white/20">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>แดชบอร์ดสภาพอากาศ</span>
+            </button>
+            <button onclick="switchTab('map')" id="tabBtn-map" class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2 bg-white/10 hover:bg-white/15 text-blue-100 border border-white/15">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                <span>แผนที่ลมและเรดาร์ (Windy Style)</span>
+            </button>
+            <button onclick="switchTab('cctv')" id="tabBtn-cctv" class="px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2 bg-white/10 hover:bg-white/15 text-blue-100 border border-white/15">
+                <i data-lucide="video" class="w-4 h-4"></i>
+                <span>กล้องวงจรปิดเขื่อนสด (CCTV)</span>
+            </button>
+        </div>
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <div id="tabContent-dashboard" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left & Center: Weather & Water Info -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Current Weather Banner Card -->
+                    <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all">
+                        <div class="absolute -right-10 -top-10 w-48 h-48 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                            <div>
+                                <div class="flex items-center space-x-2 text-blue-200 text-sm font-medium mb-1">
+                                    <i data-lucide="map-pin" class="w-4 h-4 text-cyan-300"></i>
+                                    <span id="locationName">กรุงเทพมหานคร, ประเทศไทย</span>
+                                    <span class="text-xs px-2.5 py-0.5 bg-emerald-500/30 border border-emerald-400/30 rounded-full text-emerald-200 ml-2">สถานะ: ปกติ</span>
+                                </div>
+                                <div class="flex items-baseline space-x-4 my-2">
+                                    <h2 id="currentTemp" class="text-6xl sm:text-7xl font-extrabold tracking-tighter text-white">32°</h2>
+                                    <div>
+                                        <p id="weatherCondition" class="text-xl sm:text-2xl font-semibold text-blue-100">มีเมฆบางส่วน</p>
+                                        <p id="weatherDesc" class="text-xs sm:text-sm text-blue-200/80">รู้สึกเหมือน 36°C • ลมพัดปานกลาง</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-4 bg-white/10 p-4 rounded-2xl border border-white/15 w-full md:w-auto justify-around">
+                                <div class="text-center px-2">
+                                    <p class="text-xs text-blue-200">สูงสุด / ต่ำสุด</p>
+                                    <p id="tempMaxMin" class="text-base font-bold mt-1">35° / 26°</p>
+                                </div>
+                                <div class="h-8 w-px bg-white/20"></div>
+                                <div class="text-center px-2">
+                                    <p class="text-xs text-blue-200">โอกาสฝนตก</p>
+                                    <p id="rainChance" class="text-base font-bold mt-1 text-cyan-300">20%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Weather Metric Cards Grid -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8 pt-6 border-t border-white/15 relative z-10">
+                            <div class="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition-all flex items-center space-x-3">
+                                <div class="p-3 bg-blue-500/20 text-blue-300 rounded-xl">
+                                    <i data-lucide="droplets" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-blue-200">ความชื้นสัมพัทธ์</p>
+                                    <p id="humidity" class="text-lg font-bold">68%</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition-all flex items-center space-x-3">
+                                <div class="p-3 bg-cyan-500/20 text-cyan-300 rounded-xl">
+                                    <i data-lucide="wind" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-blue-200">ความเร็วลม</p>
+                                    <p id="windSpeed" class="text-lg font-bold">14 กม./ชม.</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition-all flex items-center space-x-3">
+                                <div class="p-3 bg-amber-500/20 text-amber-300 rounded-xl">
+                                    <i data-lucide="sun" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-blue-200">ดัชนี UV</p>
+                                    <p id="uvIndex" class="text-lg font-bold">7 (สูงมาก)</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white/10 hover:bg-white/15 p-4 rounded-2xl border border-white/10 transition-all flex items-center space-x-3">
+                                <div class="p-3 bg-emerald-500/20 text-emerald-300 rounded-xl">
+                                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-blue-200">คุณภาพอากาศ PM2.5</p>
+                                    <p id="pm25" class="text-lg font-bold text-emerald-300">24 (ดี)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 7-Day Forecast -->
+                    <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-xl">
+                        <div class="flex items-center justify-between mb-5">
+                            <h3 class="text-lg font-bold flex items-center space-x-2">
+                                <i data-lucide="calendar" class="w-5 h-5 text-blue-300"></i>
+                                <span>พยากรณ์อากาศ 7 วันล่วงหน้า</span>
+                            </h3>
+                            <span class="text-xs text-blue-200 bg-white/10 px-3 py-1 rounded-full border border-white/10">ข้อมูลเรียลไทม์รายวัน</span>
+                        </div>
+
+                        <div id="forecastContainer" class="grid grid-cols-2 sm:grid-cols-7 gap-3">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Water Resources & Dam Management Section -->
+                    <div class="glass-card rounded-3xl p-6 sm:p-7 shadow-xl">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h3 class="text-lg font-bold flex items-center space-x-2">
+                                    <i data-lucide="waves" class="w-5 h-5 text-cyan-300"></i>
+                                    <span>สถานการณ์มวลน้ำและเขื่อนหลัก (เรียลไทม์)</span>
+                                </h3>
+                                <p class="text-xs text-blue-200/80 mt-0.5">ปริมาตรน้ำใช้การได้และความจุเขื่อนขนาดใหญ่ทั่วประเทศ</p>
+                            </div>
+                            <button onclick="switchTab('cctv')" class="text-xs px-3.5 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl shadow-md transition-all flex items-center space-x-1.5">
+                                <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                                <span>ดูกล้องวงจรปิดเขื่อน</span>
+                            </button>
+                        </div>
+
+                        <div id="damListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Quick Selector & Mini Weather Summary -->
+                <div class="space-y-6">
+                    
+                    <!-- Quick Map Shortcut Banner -->
+                    <div onclick="switchTab('map')" class="glass-card rounded-3xl p-6 shadow-xl relative overflow-hidden cursor-pointer hover:border-cyan-400/50 transition-all group">
+                        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-cyan-400/20 rounded-full blur-2xl group-hover:bg-cyan-400/40 transition-all"></div>
+                        <div class="flex items-center space-x-4">
+                            <div class="p-3.5 bg-cyan-500/20 text-cyan-300 rounded-2xl border border-cyan-400/30">
+                                <i data-lucide="globe" class="w-7 h-7"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-base text-white">เปิดแผนที่ลมและเรดาร์ (Windy)</h4>
+                                <p class="text-xs text-blue-200 mt-0.5">คลิกเพื่อดูแผนที่จำลองสภาพอากาศ ทิศทางลม และฝนฟ้าคะนองทั่วไทยแบบเรียลไทม์</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Locations -->
+                    <div class="glass-card rounded-3xl p-6 shadow-xl">
+                        <h3 class="text-lg font-bold mb-4 flex items-center space-x-2">
+                            <i data-lucide="compass" class="w-5 h-5 text-blue-300"></i>
+                            <span>เลือกจังหวัด / เขื่อนยอดนิยม</span>
+                        </h3>
+
+                        <div class="grid grid-cols-1 gap-2.5" id="quickCityGrid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
         </div>
-    </header>
 
-    <!-- Main Navigation Tabs -->
-    <nav class="max-w-7xl mx-auto px-4 mt-4">
-        <div class="flex bg-white/40 dark:bg-slate-900/40 p-1.5 rounded-2xl backdrop-blur-md gap-1 shadow-inner overflow-x-auto">
-            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition bg-blue-600 text-white shadow-md whitespace-nowrap">
-                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> แดชบอร์ดภาพรวม
-            </button>
-            <button onclick="switchTab('map')" id="btn-map" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-300 hover:bg-white/50 whitespace-nowrap">
-                <i data-lucide="map" class="w-4 h-4"></i> แผนที่สภาพอากาศ (Windy)
-            </button>
-            <button onclick="switchTab('cctv')" id="btn-cctv" class="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-300 hover:bg-white/50 whitespace-nowrap">
-                <i data-lucide="video" class="w-4 h-4"></i> กล้องวงจรปิดเขื่อนทั่วไทย
-            </button>
+        <!-- ================= TAB 2: WINDY STYLE MAP ================= -->
+        <div id="tabContent-map" class="hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 shadow-2xl">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold flex items-center space-x-2">
+                            <i data-lucide="globe" class="w-6 h-6 text-cyan-300"></i>
+                            <span>แผนที่สภาพอากาศเชิงพละ (Windy Style Real-Time Interactive Map)</span>
+                        </h3>
+                        <p class="text-xs text-blue-200/80 mt-1">เลือกเลเยอร์ข้อมูลสภาพอากาศ ทิศทางลม เรดาร์ฝน หรืออุณหภูมิ ผ่านระบบแผนที่โลกอัจฉริยะ</p>
+                    </div>
+                    
+                    <!-- Windy Layer Switcher Buttons -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-blue-200 font-medium mr-1">เลเยอร์:</span>
+                        <button onclick="changeWindyLayer('wind', 'ลมกระโชกและทิศทางลม')" id="layer-wind" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition-all flex items-center space-x-1.5">
+                            <i data-lucide="wind" class="w-3.5 h-3.5"></i>
+                            <span>ทิศทางลม</span>
+                        </button>
+                        <button onclick="changeWindyLayer('rain', 'เรดาร์ฝนและการสะสมฝน')" id="layer-rain" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-blue-100 border border-white/15 transition-all flex items-center space-x-1.5">
+                            <i data-lucide="cloud-rain" class="w-3.5 h-3.5"></i>
+                            <span>ฝน/เรดาร์</span>
+                        </button>
+                        <button onclick="changeWindyLayer('temp', 'อุณหภูมิพื้นผิว')" id="layer-temp" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-blue-100 border border-white/15 transition-all flex items-center space-x-1.5">
+                            <i data-lucide="thermometer" class="w-3.5 h-3.5"></i>
+                            <span>อุณหภูมิ</span>
+                        </button>
+                        <button onclick="changeWindyLayer('clouds', 'เมฆปกคลุมชั้นบรรยากาศ')" id="layer-clouds" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-blue-100 border border-white/15 transition-all flex items-center space-x-1.5">
+                            <i data-lucide="cloud" class="w-3.5 h-3.5"></i>
+                            <span>เมฆ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Windy iframe Container -->
+                <div class="relative w-full h-[600px] rounded-2xl overflow-hidden border border-white/20 shadow-inner bg-slate-950">
+                    <iframe id="windyIframe" 
+                        src="https://embed.windy.com/embed2.html?lat=13.756&lon=100.502&detailLat=13.756&detailLon=100.502&width=650&height=450&zoom=6&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=true&metricWind=default&metricTemp=default" 
+                        class="w-full h-full border-0" 
+                        allowfullscreen>
+                    </iframe>
+                    
+                    <!-- Floating Layer Indicator Badge -->
+                    <div class="absolute bottom-4 left-4 bg-slate-900/85 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/20 text-xs font-semibold flex items-center space-x-2 shadow-2xl">
+                        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        <span class="text-white" id="currentLayerLabel">แสดงผลเลเยอร์: ทิศทางลม (Windy.com API)</span>
+                    </div>
+                </div>
+
+                <!-- Footer Quick Status -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10 text-xs text-blue-200">
+                    <div class="bg-white/5 border border-white/10 p-3.5 rounded-2xl flex items-center space-x-3">
+                        <i data-lucide="activity" class="w-5 h-5 text-cyan-400 shrink-0"></i>
+                        <div>
+                            <p class="font-bold text-white">ข้อมูลพยากรณ์ความละเอียดสูง</p>
+                            <p class="text-[11px] text-blue-200/70">อัปเดตโมเดลสภาพอากาศทุก 3 ชั่วโมงโดยตรงจากระบบ</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-3.5 rounded-2xl flex items-center space-x-3">
+                        <i data-lucide="navigation" class="w-5 h-5 text-blue-400 shrink-0"></i>
+                        <div>
+                            <p class="font-bold text-white">ระบบควบคุมการซูมและตำแหน่ง</p>
+                            <p class="text-[11px] text-blue-200/70">สามารถคลิกเลื่อนแผนที่หรือเปลี่ยนพิกัดจังหวัดได้ทันที</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/5 border border-white/10 p-3.5 rounded-2xl flex items-center space-x-3">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+                        <div>
+                            <p class="font-bold text-white">เชื่อมต่อเครือข่ายปลอดภัย</p>
+                            <p class="text-[11px] text-blue-200/70">พร้อมใช้งานบนมือถือ แท็บเล็ต และคอมพิวเตอร์อย่างลื่นไหล</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
 
-    <!-- Content Container -->
-    <main class="max-w-7xl mx-auto px-4 mt-6">
-
-        <!-- TAB 1: DASHBOARD -->
-        <section id="tab-dashboard" class="space-y-6">
-            <!-- Weather Overview Banner -->
-            <div class="glass-panel rounded-3xl p-6 shadow-xl relative overflow-hidden">
-                <div class="absolute -right-10 -bottom-10 opacity-10 dark:opacity-20">
-                    <i data-lucide="cloud-rain" class="w-64 h-64"></i>
-                </div>
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+        <!-- ================= TAB 3: DAM CCTV LIVE FEEDS ================= -->
+        <div id="tabContent-cctv" class="hidden space-y-6">
+            <div class="glass-card rounded-3xl p-6 shadow-2xl">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
-                        <div class="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-medium text-sm mb-1">
-                            <i data-lucide="map-pin" class="w-4 h-4"></i> กรุงเทพมหานคร และประเทศไทย (เรียลไทม์)
-                        </div>
-                        <h2 class="text-4xl font-bold flex items-center gap-3">
-                            32°C <span class="text-lg font-normal text-slate-500 dark:text-slate-400">| มีฝนฟ้าคะนองบางแห่ง</span>
-                        </h2>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-2">
-                            ความชื้น: 78% | ลม: 14 กม./ชม. (ทิศตะวันตกเฉียงใต้) | คุณภาพอากาศ (AQI): 38 (ดีเยี่ยม)
-                        </p>
-                    </div>
-                    <div class="flex gap-3">
-                        <div class="bg-blue-50 dark:bg-slate-800/80 p-4 rounded-2xl text-center border border-blue-100 dark:border-slate-700">
-                            <span class="text-xs text-slate-500 block">ปริมาณฝนสะสม 24 ชม.</span>
-                            <span class="text-xl font-bold text-blue-600 dark:text-blue-400">18.5 มม.</span>
-                        </div>
-                        <div class="bg-emerald-50 dark:bg-slate-800/80 p-4 rounded-2xl text-center border border-emerald-100 dark:border-slate-700">
-                            <span class="text-xs text-slate-500 block">สถานภาพน้ำภาพรวม</span>
-                            <span class="text-xl font-bold text-emerald-600 dark:text-emerald-400">ปกติ (76%)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="glass-panel rounded-2xl p-5 shadow-md flex items-center gap-4">
-                    <div class="p-3 bg-amber-500/10 text-amber-600 rounded-xl">
-                        <i data-lucide="sun" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">ดัชนีรังสี UV</p>
-                        <h3 class="text-xl font-bold">6.5 (ปานกลาง)</h3>
-                        <p class="text-xs text-emerald-600 mt-0.5">ควรสวมแว่นกันแดดช่วงเที่ยง</p>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-5 shadow-md flex items-center gap-4">
-                    <div class="p-3 bg-blue-500/10 text-blue-600 rounded-xl">
-                        <i data-lucide="cloud-rain" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">โอกาสเกิดฝนตก</p>
-                        <h3 class="text-xl font-bold">65% ในช่วงบ่าย</h3>
-                        <p class="text-xs text-blue-600 mt-0.5">เตรียมร่มก่อนออกจากบ้าน</p>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-5 shadow-md flex items-center gap-4">
-                    <div class="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl">
-                        <i data-lucide="activity" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500 dark:text-slate-400">แหล่งข้อมูลทางการ</p>
-                        <h3 class="text-xl font-bold">ThaiWater.net</h3>
-                        <a href="https://www.thaiwater.net" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
-                            เยี่ยมชมคลังข้อมูลน้ำ <i data-lucide="external-link" class="w-3 h-3"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7 Days Forecast -->
-            <div class="glass-panel rounded-3xl p-6 shadow-xl">
-                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
-                    <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i> พยากรณ์อากาศ 7 วันล่วงหน้า
-                </h3>
-                <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">วันนี้</p>
-                        <i data-lucide="cloud-rain" class="w-8 h-8 mx-auto my-2 text-blue-500"></i>
-                        <p class="font-bold text-sm">32° / 25°</p>
-                        <span class="text-[10px] text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">ฝน 60%</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">ศุกร์</p>
-                        <i data-lucide="cloud-sun" class="w-8 h-8 mx-auto my-2 text-amber-500"></i>
-                        <p class="font-bold text-sm">33° / 25°</p>
-                        <span class="text-[10px] text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">มีเมฆบางส่วน</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">เสาร์</p>
-                        <i data-lucide="sun" class="w-8 h-8 mx-auto my-2 text-amber-500"></i>
-                        <p class="font-bold text-sm">34° / 26°</p>
-                        <span class="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">อากาศดี</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">อาทิตย์</p>
-                        <i data-lucide="cloud-rain" class="w-8 h-8 mx-auto my-2 text-blue-500"></i>
-                        <p class="font-bold text-sm">31° / 24°</p>
-                        <span class="text-[10px] text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">ฝนฟ้าคะนอง</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">จันทร์</p>
-                        <i data-lucide="cloud-sun" class="w-8 h-8 mx-auto my-2 text-amber-500"></i>
-                        <p class="font-bold text-sm">33° / 25°</p>
-                        <span class="text-[10px] text-amber-600 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">มีเมฆบางส่วน</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">อังคาร</p>
-                        <i data-lucide="sun" class="w-8 h-8 mx-auto my-2 text-amber-500"></i>
-                        <p class="font-bold text-sm">35° / 26°</p>
-                        <span class="text-[10px] text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">แดดจัด</span>
-                    </div>
-                    <div class="bg-white/40 dark:bg-slate-800/50 p-3 rounded-2xl border border-white/20">
-                        <p class="text-xs font-semibold text-slate-500">พุธ</p>
-                        <i data-lucide="cloud-rain" class="w-8 h-8 mx-auto my-2 text-blue-500"></i>
-                        <p class="font-bold text-sm">32° / 24°</p>
-                        <span class="text-[10px] text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-full">ฝนฟ้าคะนอง</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 2: MAP (WINDY) -->
-        <section id="tab-map" class="hidden space-y-4">
-            <div class="glass-panel rounded-3xl p-4 shadow-xl">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3 px-2">
-                    <div>
-                        <h3 class="font-bold text-lg flex items-center gap-2">
-                            <i data-lucide="map" class="w-5 h-5 text-blue-600"></i> แผนที่สภาพอากาศและเรดาร์เรียลไทม์ (Windy.com)
+                        <h3 class="text-xl font-bold flex items-center space-x-2">
+                            <i data-lucide="video" class="w-6 h-6 text-cyan-300"></i>
+                            <span>กล้องวงจรปิดถ่ายทอดสด 24 ชม. (CCTV Live Feeds) เขื่อนและอ่างเก็บน้ำสำคัญ</span>
                         </h3>
-                        <p class="text-xs text-slate-500">แสดงกลุ่มฝน ทิศทางลม อุณหภูมิ และความกดอากาศทั่วประเทศไทย</p>
+                        <p class="text-xs text-blue-200/80 mt-1">รับชมภาพสตรีมมิ่งสดและลิงก์เชื่อมต่อระบบกล้อง CCTV ของเขื่อนหลักทั่วประเทศ</p>
                     </div>
-                    <div class="flex gap-2">
-                        <a href="https://www.windy.com" target="_blank" class="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-medium shadow hover:bg-blue-700 transition flex items-center gap-1">
-                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> เปิดหน้าจอเต็ม
-                        </a>
-                    </div>
-                </div>
-                <!-- Windy iframe widget -->
-                <div class="w-full h-[600px] rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-inner">
-                    <iframe width="100%" height="100%" src="https://embed.windy.com/embed2.html?lat=13.750&lon=100.516&detailLat=13.750&detailLon=100.516&width=650&height=450&zoom=6&level=surface&overlay=wind&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1" frameborder="0"></iframe>
-                </div>
-            </div>
-        </section>
 
-        <!-- TAB 3: NATIONWIDE CCTV & WATER LEVEL -->
-        <section id="tab-cctv" class="hidden space-y-6">
-            <div class="glass-panel rounded-3xl p-6 shadow-xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                    <div>
-                        <h3 class="font-bold text-lg flex items-center gap-2">
-                            <i data-lucide="video" class="w-5 h-5 text-blue-600"></i> กล้องวงจรปิดและสถานการณ์น้ำเขื่อน/ประตูน้ำทั่วประเทศไทย
-                        </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">ข้อมูลระดับน้ำปัจจุบันและลิงก์ตรงสู่กล้องวงจรปิดเรียลไทม์จากคลังข้อมูลน้ำแห่งชาติ (ThaiWater)</p>
-                    </div>
-                    <!-- Region Filter -->
-                    <div class="flex flex-wrap gap-1.5" id="regionFilters">
-                        <button onclick="filterRegion('all')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white transition">ทุกภาค</button>
-                        <button onclick="filterRegion('north')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-white transition">ภาคเหนือ</button>
-                        <button onclick="filterRegion('central')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-white transition">ภาคกลาง</button>
-                        <button onclick="filterRegion('northeast')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-white transition">ภาคตะวันออกเฉียงเหนือ</button>
-                        <button onclick="filterRegion('east')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-white transition">ภาคตะวันออก</button>
-                        <button onclick="filterRegion('south')" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-white/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-white transition">ภาคใต้</button>
+                    <!-- Dam CCTV Selector Pills -->
+                    <div id="cctvSelectorList" class="flex flex-wrap gap-2">
+                        <!-- Populated by JS -->
                     </div>
                 </div>
 
-                <!-- Dam Grid Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="damGrid">
-                    <!-- Dam 1 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="north">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80" alt="เขื่อนภูมิพล" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคเหนือ • จ.ตาก</div>
-                            <div class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ปกติ
+                <!-- Main CCTV Player & Details Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left (2 cols): Video Player Simulation & Direct Link Button -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-white/20 shadow-2xl flex items-center justify-center group">
+                            <!-- Simulated Live Video Stream Image with overlay -->
+                            <img id="cctvImage" src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1280&q=80" alt="CCTV Live" class="w-full h-full object-cover opacity-90 transition-all duration-700">
+                            
+                            <!-- Live Indicator Badge -->
+                            <div class="absolute top-4 left-4 flex items-center space-x-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-xs font-semibold">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+                                <span class="text-white">LIVE STREAM • HD 1080P</span>
                             </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">เขื่อนภูมิพล</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 71.4% (9,650 ล้าน ลบ.ม.)</p>
+
+                            <!-- Timestamp Badge -->
+                            <div class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-xs font-mono text-cyan-300" id="cctvTimestamp">
+                                2026-10-01 14:39:41
+                            </div>
+
+                            <!-- Bottom video overlay info -->
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/50 to-transparent p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                <div>
+                                    <h4 id="cctvTitle" class="font-bold text-base text-white">เขื่อนภูมิพล (ตาก) - จุดระบายน้ำหลัก</h4>
+                                    <p id="cctvSubLocation" class="text-xs text-blue-200/80">มุมกล้อง 01: อาคารโรงไฟฟ้าพลังน้ำ</p>
+                                </div>
+                                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                    <a id="externalCctvLink" href="https://www.thaiwater.net" target="_blank" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl text-xs font-semibold shadow-md transition-all flex items-center space-x-1.5">
+                                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                                        <span>เปิดสตรีมกล้องจริง (ทางการ)</span>
+                                    </a>
+                                    <button onclick="refreshCctvStream()" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-white backdrop-blur-md border border-white/20 transition-all" title="รีเฟรชภาพสตรีม">
+                                        <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">5,850 ล้าน ลบ.ม. (58.6%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: 71.4%"></div>
-                                </div>
-                            </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
+
+                        <!-- Camera Angle Selector Buttons -->
+                        <div class="grid grid-cols-3 gap-3" id="cctvAnglesContainer">
+                            <!-- Populated by JS -->
                         </div>
                     </div>
 
-                    <!-- Dam 2 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="north">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80" alt="เขื่อนสิริกิติ์" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคเหนือ • จ.อุตรดิตถ์</div>
-                            <div class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ปกติ
-                            </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">เขื่อนสิริกิติ์</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 68.2% (6,512 ล้าน ลบ.ม.)</p>
+                    <!-- Right (1 col): Dam Live Metrics & Status -->
+                    <div class="space-y-4 flex flex-col justify-between">
+                        <div class="glass-card-dark rounded-2xl p-5 border border-white/15 space-y-4">
+                            <h4 class="font-bold text-base text-white flex items-center space-x-2 border-b border-white/10 pb-3">
+                                <i data-lucide="info" class="w-5 h-5 text-cyan-300"></i>
+                                <span id="cctvDetailName">ข้อมูลเขื่อนภูมิพล</span>
+                            </h4>
+
+                            <div class="space-y-3 text-sm">
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                                    <span class="text-blue-200">ระดับน้ำปัจจุบัน</span>
+                                    <span id="cctvWaterLevel" class="font-bold text-cyan-300 text-base">245.50 ม. (รทก.)</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                                    <span class="text-blue-200">ปริมาตรน้ำกักเก็บ</span>
+                                    <span id="cctvVolume" class="font-bold text-white">9,420 ล้าน ลบ.ม. (71%)</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                                    <span class="text-blue-200">อัตราน้ำไหลเข้า</span>
+                                    <span id="cctvInflow" class="font-bold text-emerald-300">+12.4 ลบ.ม./วินาที</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                                    <span class="text-blue-200">อัตราการระบายน้ำ</span>
+                                    <span id="cctvOutflow" class="font-bold text-amber-300">5.0 ลบ.ม./วินาที</span>
+                                </div>
+                                <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                                    <span class="text-blue-200">สภาพอากาศบริเวณเขื่อน</span>
+                                    <span id="cctvWeather" class="font-bold text-white">แจ่มใส 31°C</span>
+                                </div>
                             </div>
                         </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">3,650 ล้าน ลบ.ม. (54.1%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: 68.2%"></div>
-                                </div>
+
+                        <!-- Emergency Contact / Status Alert -->
+                        <div class="bg-gradient-to-r from-blue-600/30 to-cyan-600/30 border border-cyan-400/30 p-4 rounded-2xl text-xs space-y-2">
+                            <div class="flex items-center space-x-2 text-cyan-300 font-bold">
+                                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                                <span>สายด่วนสถานการณ์น้ำและเขื่อน</span>
                             </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
+                            <p class="text-blue-100">ศูนย์ปฏิบัติการน้ำอัจฉริยะ (SWOC) โทร 1460 ตลอด 24 ชั่วโมง</p>
                         </div>
                     </div>
 
-                    <!-- Dam 3 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="central">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80" alt="เขื่อนป่าสักชลสิทธิ์" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคกลาง • จ.ลพบุรี</div>
-                            <div class="absolute top-3 right-3 bg-amber-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> เฝ้าระวัง
-                            </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">เขื่อนป่าสักชลสิทธิ์</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 84.5% (831 ล้าน ลบ.ม.)</p>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">825 ล้าน ลบ.ม. (85.1%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-amber-500 h-full rounded-full" style="width: 84.5%"></div>
-                                </div>
-                            </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Dam 4 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="northeast">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80" alt="เขื่อนอุบลรัตน์" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคอีสาน • จ.ขอนแก่น</div>
-                            <div class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ปกติ
-                            </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">เขื่อนอุบลรัตน์</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 62.1% (1,480 ล้าน ลบ.ม.)</p>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">902 ล้าน ลบ.ม. (51.2%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: 62.1%"></div>
-                                </div>
-                            </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Dam 5 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="east">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80" alt="เขื่อนบางพระ" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคตะวันออก • จ.ชลบุรี</div>
-                            <div class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ปกติ
-                            </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">อ่างเก็บน้ำบางพระ</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 75.8% (88 ล้าน ลบ.ม.)</p>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">72 ล้าน ลบ.ม. (70.2%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: 75.8%"></div>
-                                </div>
-                            </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Dam 6 -->
-                    <div class="dam-card glass-panel rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-md flex flex-col justify-between" data-region="south">
-                        <div class="relative h-48 bg-slate-900">
-                            <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80" alt="เขื่อนรัชชประภา" class="w-full h-full object-cover opacity-80">
-                            <div class="absolute top-3 left-3 bg-blue-600/90 text-white text-[10px] px-2.5 py-1 rounded-full backdrop-blur-md">ภาคใต้ • จ.สุราษฎร์ธานี</div>
-                            <div class="absolute top-3 right-3 bg-emerald-500/90 text-white text-[10px] px-2.5 py-1 rounded-full font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ปกติ
-                            </div>
-                            <div class="absolute bottom-3 left-3 right-3 text-white">
-                                <h4 class="font-bold text-base drop-shadow">เขื่อนรัชชประภา</h4>
-                                <p class="text-xs text-slate-200 drop-shadow">ปริมาณน้ำ: 79.3% (4,560 ล้าน ลบ.ม.)</p>
-                            </div>
-                        </div>
-                        <div class="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                            <div class="space-y-1.5">
-                                <div class="flex justify-between text-xs">
-                                    <span class="text-slate-500">น้ำใช้การได้:</span>
-                                    <span class="font-medium">2,840 ล้าน ลบ.ม. (72.1%)</span>
-                                </div>
-                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                                    <div class="bg-blue-600 h-full rounded-full" style="width: 79.3%"></div>
-                                </div>
-                            </div>
-                            <a href="https://www.thaiwater.net" target="_blank" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-xl flex items-center justify-center gap-1.5 transition shadow">
-                                <i data-lucide="video" class="w-4 h-4"></i> ชมกล้อง CCTV และรายงานสด
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <!-- Footer -->
-    <footer class="max-w-7xl mx-auto px-4 mt-12 text-center text-xs text-white/80">
-        <p>HydroWeather Live © 2026 • ข้อมูลสภาพอากาศและมวลน้ำเรียลไทม์ประเทศไทย</p>
-    </footer>
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-xs text-blue-200/70">
+            <p>© 2026 HydroWeather Live Systems. ข้อมูลอ้างอิงจากระบบตรวจวัดอุตุนิยมวิทยาและ Windy.com API</p>
+        </footer>
 
-    <!-- JavaScript Application Logic -->
+    </div>
+
+    <!-- Application JavaScript -->
     <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // Data Store for Weather & Water Stations
+        const stationsDB = {
+            "bangkok": {
+                id: "bangkok",
+                name: "กรุงเทพมหานคร (สถานีหลัก กทม.)",
+                lat: 13.7563,
+                lng: 100.5018,
+                status: "normal",
+                statusText: "ปกติ",
+                statusColor: "emerald",
+                temp: 32,
+                condition: "มีเมฆบางส่วน",
+                desc: "รู้สึกเหมือน 36°C • ลมพัดปานกลาง",
+                tempMax: 35,
+                tempMin: 26,
+                rainChance: "20%",
+                humidity: "68%",
+                wind: "14 กม./ชม.",
+                uv: "7 (สูงมาก)",
+                pm25: "24 (ดี)",
+                pmStatusColor: "text-emerald-300",
+                forecast: [
+                    { day: "วันนี้", icon: "cloud-sun", tempMax: "35°", tempMin: "26°", rain: "20%" },
+                    { day: "ศุกร์", icon: "cloud-rain", tempMax: "33°", tempMin: "25°", rain: "65%" },
+                    { day: "เสาร์", icon: "cloud-sun", tempMax: "34°", tempMin: "26°", rain: "30%" },
+                    { day: "อาทิตย์", icon: "sun", tempMax: "36°", tempMin: "27°", rain: "10%" },
+                    { day: "จันทร์", icon: "cloud", tempMax: "32°", tempMin: "25°", rain: "40%" },
+                    { day: "อังคาร", icon: "cloud-rain", tempMax: "31°", tempMin: "24°", rain: "75%" },
+                    { day: "พุธ", icon: "cloud-sun", tempMax: "33°", tempMin: "25°", rain: "25%" }
+                ]
+            },
+            "chiangmai": {
+                id: "chiangmai",
+                name: "เชียงใหม่ (สถานีอุตุนิยมวิทยาภาคเหนือ)",
+                lat: 18.7883,
+                lng: 98.9853,
+                status: "normal",
+                statusText: "ปกติ",
+                statusColor: "emerald",
+                temp: 28,
+                condition: "ท้องฟ้าแจ่มใส",
+                desc: "อากาศดีเหมาะแก่การท่องเที่ยว",
+                tempMax: 32,
+                tempMin: 20,
+                rainChance: "10%",
+                humidity: "55%",
+                wind: "8 กม./ชม.",
+                uv: "8 (สูงมาก)",
+                pm25: "18 (ดีมาก)",
+                pmStatusColor: "text-emerald-300",
+                forecast: [
+                    { day: "วันนี้", icon: "sun", tempMax: "32°", tempMin: "20°", rain: "10%" },
+                    { day: "ศุกร์", icon: "sun", tempMax: "33°", tempMin: "21°", rain: "5%" },
+                    { day: "เสาร์", icon: "cloud-sun", tempMax: "31°", tempMin: "20°", rain: "15%" },
+                    { day: "อาทิตย์", icon: "cloud", tempMax: "30°", tempMin: "19°", rain: "20%" },
+                    { day: "จันทร์", icon: "sun", tempMax: "32°", tempMin: "20°", rain: "10%" },
+                    { day: "อังคาร", icon: "sun", tempMax: "33°", tempMin: "21°", rain: "10%" },
+                    { day: "พุธ", icon: "cloud-sun", tempMax: "31°", tempMin: "20°", rain: "20%" }
+                ]
+            },
+            "khonkaen": {
+                id: "khonkaen",
+                name: "เขื่อนอุบลรัตน์ (ขอนแก่น)",
+                lat: 16.7845,
+                lng: 102.6247,
+                status: "warning",
+                statusText: "เฝ้าระวัง (น้ำสูงกว่าเกณฑ์)",
+                statusColor: "amber",
+                temp: 34,
+                condition: "แดดจัด",
+                desc: "อากาศร้อนอบอ้าว น้ำไหลเข้าสูง",
+                tempMax: 37,
+                tempMin: 25,
+                rainChance: "15%",
+                humidity: "50%",
+                wind: "12 กม./ชม.",
+                uv: "9 (อันตราย)",
+                pm25: "32 (ปานกลาง)",
+                pmStatusColor: "text-yellow-300",
+                forecast: [
+                    { day: "วันนี้", icon: "sun", tempMax: "37°", tempMin: "25°", rain: "15%" },
+                    { day: "ศุกร์", icon: "sun", tempMax: "38°", tempMin: "26°", rain: "10%" },
+                    { day: "เสาร์", icon: "cloud-sun", tempMax: "36°", tempMin: "25°", rain: "25%" },
+                    { day: "อาทิตย์", icon: "cloud-rain", tempMax: "34°", tempMin: "24°", rain: "60%" },
+                    { day: "จันทร์", icon: "cloud", tempMax: "35°", tempMin: "25°", rain: "30%" },
+                    { day: "อังคาร", icon: "sun", tempMax: "37°", tempMin: "26°", rain: "10%" },
+                    { day: "พุธ", icon: "sun", tempMax: "38°", tempMin: "27°", rain: "10%" }
+                ]
+            },
+            "phuket": {
+                id: "phuket",
+                name: "ภูเก็ต (สถานีชายฝั่งอันดามัน)",
+                lat: 7.8804,
+                lng: 98.3923,
+                status: "warning",
+                statusText: "เฝ้าระวังฝนตกหนัก",
+                statusColor: "amber",
+                temp: 30,
+                condition: "ฝนฟ้าคะนองบางแห่ง",
+                desc: "มีลมกระโชกแรงในบางช่วง",
+                tempMax: 32,
+                tempMin: 26,
+                rainChance: "70%",
+                humidity: "82%",
+                wind: "22 กม./ชม.",
+                uv: "6 (สูง)",
+                pm25: "15 (ดีมาก)",
+                pmStatusColor: "text-emerald-300",
+                forecast: [
+                    { day: "วันนี้", icon: "cloud-rain", tempMax: "32°", tempMin: "26°", rain: "70%" },
+                    { day: "ศุกร์", icon: "cloud-rain", tempMax: "31°", tempMin: "25°", rain: "80%" },
+                    { day: "เสาร์", icon: "cloud", tempMax: "32°", tempMin: "26°", rain: "40%" },
+                    { day: "อาทิตย์", icon: "cloud-sun", tempMax: "33°", tempMin: "27°", rain: "30%" },
+                    { day: "จันทร์", icon: "cloud-rain", tempMax: "30°", tempMin: "25°", rain: "85%" },
+                    { day: "อังคาร", icon: "cloud-rain", tempMax: "31°", tempMin: "25°", rain: "65%" },
+                    { day: "พุธ", icon: "cloud", tempMax: "32°", tempMin: "26°", rain: "45%" }
+                ]
+            },
+            "bhumibol": {
+                id: "bhumibol",
+                name: "เขื่อนภูมิพล (ตาก)",
+                lat: 17.2458,
+                lng: 99.0351,
+                status: "normal",
+                statusText: "ปกติ (มั่นคงแข็งแรง)",
+                statusColor: "emerald",
+                temp: 31,
+                condition: "ท้องฟ้าโปร่ง",
+                desc: "ระดับน้ำอยู่ในเกณฑ์ปลอดภัย",
+                tempMax: 34,
+                tempMin: 23,
+                rainChance: "15%",
+                humidity: "60%",
+                wind: "10 กม./ชม.",
+                uv: "8 (สูงมาก)",
+                pm25: "20 (ดี)",
+                pmStatusColor: "text-emerald-300",
+                forecast: [
+                    { day: "วันนี้", icon: "sun", tempMax: "34°", tempMin: "23°", rain: "15%" },
+                    { day: "ศุกร์", icon: "sun", tempMax: "35°", tempMin: "24°", rain: "10%" },
+                    { day: "เสาร์", icon: "cloud-sun", tempMax: "33°", tempMin: "23°", rain: "25%" },
+                    { day: "อาทิตย์", icon: "cloud", tempMax: "32°", tempMin: "22°", rain: "30%" },
+                    { day: "จันทร์", icon: "sun", tempMax: "34°", tempMin: "23°", rain: "10%" },
+                    { day: "อังคาร", icon: "sun", tempMax: "35°", tempMin: "24°", rain: "10%" },
+                    { day: "พุธ", icon: "cloud-sun", tempMax: "33°", tempMin: "23°", rain: "20%" }
+                ]
+            }
+        };
+
+        const damDataList = [
+            {
+                key: "bhumibol",
+                name: "เขื่อนภูมิพล (ตาก)",
+                capacity: "71%",
+                volume: "9,420 ล้าน ลบ.ม.",
+                inflow: "+12.4 ลบ.ม./วินาที",
+                status: "ปกติ (รองรับน้ำได้อีกมาก)",
+                statusColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+                percent: 71,
+                cctvKey: "bhumibol"
+            },
+            {
+                key: "sirikit",
+                name: "เขื่อนสิริกิติ์ (อุตรดิตถ์)",
+                capacity: "68%",
+                volume: "6,510 ล้าน ลบ.ม.",
+                inflow: "+9.8 ลบ.ม./วินาที",
+                status: "ปกติ (บริหารจัดการน้ำดีเยี่ยม)",
+                statusColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+                percent: 68,
+                cctvKey: "sirikit"
+            },
+            {
+                key: "ubonratana",
+                name: "เขื่อนอุบลรัตน์ (ขอนแก่น)",
+                capacity: "84%",
+                volume: "2,015 ล้าน ลบ.ม.",
+                inflow: "+24.5 ลบ.ม./วินาที",
+                status: "เฝ้าระวัง (น้ำสูงกว่าเกณฑ์ปกติ)",
+                statusColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+                percent: 84,
+                cctvKey: "ubonratana"
+            },
+            {
+                key: "pasak",
+                name: "เขื่อนป่าสักชลสิทธิ์ (ลพบุรี/สระบุรี)",
+                capacity: "54%",
+                volume: "512 ล้าน ลบ.ม.",
+                inflow: "+5.1 ลบ.ม./วินาที",
+                status: "ปกติ (น้ำอยู่ในเกณฑ์เหมาะสม)",
+                statusColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+                percent: 54,
+                cctvKey: "pasak"
+            }
+        ];
+
+        // CCTV Data Store with Official Links
+        const cctvDB = {
+            bhumibol: {
+                name: "เขื่อนภูมิพล (ตาก)",
+                subLocation: "มุมกล้อง 01: อาคารโรงไฟฟ้าและสันเขื่อนหลัก",
+                image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1280&q=80",
+                waterLevel: "245.50 ม. (รทก.)",
+                volume: "9,420 ล้าน ลบ.ม. (71%)",
+                inflow: "+12.4 ลบ.ม./วินาที",
+                outflow: "5.0 ลบ.ม./วินาที",
+                weather: "แจ่มใส 31°C",
+                externalUrl: "https://www.thaiwater.net",
+                angles: [
+                    { name: "สันเขื่อนหลัก", img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "อาคารระบายน้ำ", img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "อ่างเก็บน้ำเหนือเขื่อน", img: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=1280&q=80" }
+                ]
+            },
+            sirikit: {
+                name: "เขื่อนสิริกิติ์ (อุตรดิตถ์)",
+                subLocation: "มุมกล้อง 01: ทัศนียภาพอ่างเก็บน้ำและทางระบายน้ำ",
+                image: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1280&q=80",
+                waterLevel: "162.20 ม. (รทก.)",
+                volume: "6,510 ล้าน ลบ.ม. (68%)",
+                inflow: "+9.8 ลบ.ม./วินาที",
+                outflow: "4.2 ลบ.ม./วินาที",
+                weather: "มีเมฆบางส่วน 29°C",
+                externalUrl: "https://www.thaiwater.net",
+                angles: [
+                    { name: "อ่างเก็บน้ำหลัก", img: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "สันเขื่อนดิน", img: "https://images.unsplash.com/photo-1426604966848-d7adacbd02bff?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "จุดตรวจวัดอุทกวิทยา", img: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1280&q=80" }
+                ]
+            },
+            ubonratana: {
+                name: "เขื่อนอุบลรัตน์ (ขอนแก่น)",
+                subLocation: "มุมกล้อง 01: บริเวณประตูระบายน้ำฉุกเฉิน",
+                image: "https://images.unsplash.com/photo-1511497584788-876761142197?auto=format&fit=crop&w=1280&q=80",
+                waterLevel: "181.90 ม. (รทก.)",
+                volume: "2,015 ล้าน ลบ.ม. (84%)",
+                inflow: "+24.5 ลบ.ม./วินาที",
+                outflow: "18.0 ลบ.ม./วินาที",
+                weather: "แดดจัด 34°C",
+                externalUrl: "https://www.thaiwater.net",
+                angles: [
+                    { name: "ประตูระบายน้ำ", img: "https://images.unsplash.com/photo-1511497584788-876761142197?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "ท้ายเขื่อน", img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "สถานีสูบน้ำ", img: "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1280&q=80" }
+                ]
+            },
+            pasak: {
+                name: "เขื่อนป่าสักชลสิทธิ์ (ลพบุรี)",
+                subLocation: "มุมกล้อง 01: สะพานรถไฟลอยน้ำและสันเขื่อน",
+                image: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1280&q=80",
+                waterLevel: "41.10 ม. (รทก.)",
+                volume: "512 ล้าน ลบ.ม. (54%)",
+                inflow: "+5.1 ลบ.ม./วินาที",
+                outflow: "2.0 ลบ.ม./วินาที",
+                weather: "แจ่มใส 33°C",
+                externalUrl: "https://www.thaiwater.net",
+                angles: [
+                    { name: "สะพานลอยน้ำ", img: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "สันเขื่อนคอนกรีต", img: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=1280&q=80" },
+                    { name: "อาคารพิพิธภัณฑ์", img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1280&q=80" }
+                ]
+            }
+        };
+
+        let currentStationKey = "bangkok";
+        let currentCctvKey = "bhumibol";
+        let isCelsius = true;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderDashboard(currentStationKey);
+            renderDamCards();
+            renderQuickSelectors();
+            renderCctvSelectors();
+            loadCctvData(currentCctvKey);
+
+            // Set live timestamp clock
+            setInterval(() => {
+                const now = new Date();
+                const timeString = now.toISOString().replace('T', ' ').substring(0, 19);
+                const tsElem = document.getElementById('cctvTimestamp');
+                if (tsElem) tsElem.innerText = timeString;
+            }, 1000);
+        });
 
         // Tab Switching Logic
         function switchTab(tabId) {
-            ['dashboard', 'map', 'cctv'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`btn-${t}`).classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-                document.getElementById(`btn-${t}`).classList.add('text-slate-700', 'dark:text-slate-300', 'hover:bg-white/50');
+            ['dashboard', 'map', 'cctv'].forEach(id => {
+                const content = document.getElementById(`tabContent-${id}`);
+                const btn = document.getElementById(`tabBtn-${id}`);
+                if (id === tabId) {
+                    content.classList.remove('hidden');
+                    btn.className = "px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/25 border border-white/20";
+                } else {
+                    content.classList.add('hidden');
+                    btn.className = "px-5 py-2.5 rounded-2xl text-sm font-semibold transition-all flex items-center space-x-2 bg-white/10 hover:bg-white/15 text-blue-100 border border-white/15";
+                }
             });
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.getElementById(`btn-${tabId}`).classList.add('bg-blue-600', 'text-white', 'shadow-md');
-            document.getElementById(`btn-${tabId}`).classList.remove('text-slate-700', 'dark:text-slate-300', 'hover:bg-white/50');
             lucide.createIcons();
         }
 
-        // Dark Mode Toggle
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
+        // Render Dashboard Data
+        function renderDashboard(stationKey) {
+            const data = stationsDB[stationKey] || stationsDB["bangkok"];
+            currentStationKey = stationKey;
 
-        // Region Filter for Dams
-        function filterRegion(region) {
-            const cards = document.querySelectorAll('.dam-card');
-            const buttons = document.querySelectorAll('#regionFilters button');
+            document.getElementById('locationName').innerText = data.name;
             
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-blue-600', 'text-white');
-                btn.classList.add('bg-white/60', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
-            });
-            event.target.classList.add('bg-blue-600', 'text-white');
-            event.target.classList.remove('bg-white/60', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-300');
+            let displayTemp = data.temp;
+            let displayMaxMin = `${data.tempMax}° / ${data.tempMin}°`;
+            if (!isCelsius) {
+                displayTemp = Math.round((data.temp * 9/5) + 32);
+                let maxF = Math.round((parseInt(data.tempMax) * 9/5) + 32);
+                let minF = Math.round((parseInt(data.tempMin) * 9/5) + 32);
+                displayMaxMin = `${maxF}°F / ${minF}°F`;
+            }
 
-            cards.forEach(card => {
-                if (region === 'all' || card.dataset.region === region) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
+            document.getElementById('currentTemp').innerText = displayTemp + (isCelsius ? '°' : '°F');
+            document.getElementById('weatherCondition').innerText = data.condition;
+            document.getElementById('weatherDesc').innerText = data.desc;
+            document.getElementById('tempMaxMin').innerText = displayMaxMin;
+            document.getElementById('rainChance').innerText = data.rainChance;
+            document.getElementById('humidity').innerText = data.humidity;
+            document.getElementById('windSpeed').innerText = data.wind;
+            document.getElementById('uvIndex').innerText = data.uv;
+            
+            const pmElem = document.getElementById('pm25');
+            pmElem.innerText = data.pm25;
+            pmElem.className = `text-lg font-bold ${data.pmStatusColor}`;
+
+            // Render Forecast
+            const forecastContainer = document.getElementById('forecastContainer');
+            forecastContainer.innerHTML = '';
+            data.forecast.forEach(f => {
+                let fMax = f.tempMax;
+                let fMin = f.tempMin;
+                if (!isCelsius) {
+                    fMax = Math.round((parseInt(f.tempMax) * 9/5) + 32) + '°F';
+                    fMin = Math.round((parseInt(f.tempMin) * 9/5) + 32) + '°F';
                 }
+
+                forecastContainer.innerHTML += `
+                    <div class="bg-white/10 hover:bg-white/15 p-3 rounded-2xl border border-white/10 text-center flex flex-col items-center justify-between transition-all">
+                        <span class="text-xs font-semibold text-blue-200">${f.day}</span>
+                        <div class="my-2 p-2 bg-white/10 rounded-xl">
+                            <i data-lucide="${f.icon}" class="w-5 h-5 text-cyan-300"></i>
+                        </div>
+                        <div class="w-full">
+                            <p class="text-sm font-bold">${fMax}</p>
+                            <p class="text-[11px] text-blue-200/70">${fMin}</p>
+                        </div>
+                        <div class="mt-2 text-[10px] bg-blue-500/20 px-2 py-0.5 rounded-md text-cyan-200 flex items-center justify-center space-x-1">
+                            <i data-lucide="droplet" class="w-3 h-3"></i>
+                            <span>${f.rain}</span>
+                        </div>
+                    </div>
+                `;
             });
+            lucide.createIcons();
         }
 
-        // Search Filter
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.dam-card');
-            cards.forEach(card => {
-                const text = card.innerText.toLowerCase();
-                if (text.includes(query)) {
-                    card.style.display = 'flex';
+        function renderDamCards() {
+            const container = document.getElementById('damListContainer');
+            container.innerHTML = '';
+            damDataList.forEach(dam => {
+                container.innerHTML += `
+                    <div class="bg-white/10 hover:bg-white/15 p-4 sm:p-5 rounded-2xl border border-white/10 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-bold text-sm sm:text-base text-white">${dam.name}</h4>
+                                <span class="text-xs px-2.5 py-1 rounded-full border ${dam.statusColor} font-medium">${dam.status}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 my-3 text-xs">
+                                <div class="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                                    <span class="text-blue-200/70 block">ปริมาตรน้ำปัจจุบัน</span>
+                                    <span class="font-semibold text-sm mt-0.5 block">${dam.volume}</span>
+                                </div>
+                                <div class="bg-white/5 p-2.5 rounded-xl border border-white/5">
+                                    <span class="text-blue-200/70 block">อัตราน้ำไหลเข้า</span>
+                                    <span class="font-semibold text-sm text-cyan-300 mt-0.5 block">${dam.inflow}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-blue-200">ความจุกักเก็บเทียบกับความจุสูงสุด</span>
+                                    <span class="font-bold text-cyan-200">${dam.capacity}</span>
+                                </div>
+                                <div class="w-full h-2.5 bg-white/10 rounded-full overflow-hidden p-0.5 border border-white/10">
+                                    <div class="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full transition-all duration-1000" style="width: ${dam.capacity}"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button onclick="jumpToCctv('${dam.cctvKey}')" class="text-xs px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-200 rounded-xl font-medium transition-all flex items-center space-x-1">
+                                    <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                                    <span>ดูกล้องวงจรปิด</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function renderQuickSelectors() {
+            const grid = document.getElementById('quickCityGrid');
+            grid.innerHTML = '';
+            Object.keys(stationsDB).forEach(key => {
+                const st = stationsDB[key];
+                const isActive = currentStationKey === key;
+                let statusBadge = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span>`;
+                if (st.status === 'warning') statusBadge = `<span class="w-2 h-2 rounded-full bg-amber-400"></span>`;
+                if (st.status === 'critical') statusBadge = `<span class="w-2 h-2 rounded-full bg-rose-500"></span>`;
+
+                grid.innerHTML += `
+                    <button onclick="selectStation('${key}')" class="p-3.5 rounded-2xl border transition-all flex items-center justify-between text-left ${isActive ? 'bg-blue-600/40 border-cyan-400 shadow-md shadow-blue-500/20' : 'bg-white/10 hover:bg-white/15 border-white/10'}">
+                        <div class="flex items-center space-x-3">
+                            <div class="p-2.5 bg-white/10 rounded-xl text-cyan-300">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-white">${st.name}</p>
+                                <p class="text-[11px] text-blue-200/70">อุณหภูมิ: ${st.temp}°C</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1.5 bg-white/10 px-2.5 py-1 rounded-full border border-white/10 text-[10px]">
+                            ${statusBadge}
+                            <span class="text-blue-100">${st.statusText}</span>
+                        </div>
+                    </button>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function selectStation(key) {
+            renderDashboard(key);
+            renderQuickSelectors();
+            switchTab('dashboard');
+        }
+
+        // Windy Map Layer Switcher
+        function changeWindyLayer(layerType, labelText) {
+            const iframe = document.getElementById('windyIframe');
+            let lat = 13.756;
+            let lon = 100.502;
+            
+            iframe.src = `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&detailLat=${lat}&detailLon=${lon}&width=650&height=450&zoom=6&level=surface&overlay=${layerType}&product=ecmwf&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=true&metricWind=default&metricTemp=default`;
+            
+            document.getElementById('currentLayerLabel').innerText = `แสดงผลเลเยอร์: ${labelText} (Windy.com API)`;
+
+            ['wind', 'rain', 'temp', 'clouds'].forEach(l => {
+                const btn = document.getElementById(`layer-${l}`);
+                if (l === layerType) {
+                    btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition-all flex items-center space-x-1.5";
                 } else {
-                    card.style.display = 'none';
+                    btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-blue-100 border border-white/15 transition-all flex items-center space-x-1.5";
                 }
             });
-        });
+            lucide.createIcons();
+        }
+
+        // CCTV Functions
+        function renderCctvSelectors() {
+            const container = document.getElementById('cctvSelectorList');
+            container.innerHTML = '';
+            Object.keys(cctvDB).forEach(key => {
+                const cctv = cctvDB[key];
+                const isActive = currentCctvKey === key;
+                container.innerHTML += `
+                    <button onclick="loadCctvData('${key}')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 ${isActive ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md border border-white/20' : 'bg-white/10 hover:bg-white/15 text-blue-100 border border-white/15'}">
+                        <i data-lucide="video" class="w-3.5 h-3.5"></i>
+                        <span>${cctv.name.split(' ')[0]}</span>
+                    </button>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function loadCctvData(key) {
+            currentCctvKey = key;
+            const cctv = cctvDB[key];
+            
+            document.getElementById('cctvImage').src = cctv.image;
+            document.getElementById('cctvTitle').innerText = cctv.name + " - สตรีมมิ่งสด";
+            document.getElementById('cctvSubLocation').innerText = cctv.subLocation;
+            document.getElementById('cctvDetailName').innerText = "ข้อมูล " + cctv.name;
+            document.getElementById('cctvWaterLevel').innerText = cctv.waterLevel;
+            document.getElementById('cctvVolume').innerText = cctv.volume;
+            document.getElementById('cctvInflow').innerText = cctv.inflow;
+            document.getElementById('cctvOutflow').innerText = cctv.outflow;
+            document.getElementById('cctvWeather').innerText = cctv.weather;
+            document.getElementById('externalCctvLink').href = cctv.externalUrl;
+
+            const anglesContainer = document.getElementById('cctvAnglesContainer');
+            anglesContainer.innerHTML = '';
+            cctv.angles.forEach((angle, idx) => {
+                const isFirst = idx === 0;
+                anglesContainer.innerHTML += `
+                    <button onclick="switchCctvAngle('${angle.img}', '${angle.name}')" class="p-2.5 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 ${isFirst ? 'bg-blue-600/40 border-cyan-400 text-white' : 'bg-white/10 hover:bg-white/15 border-white/10 text-blue-200'}">
+                        <i data-lucide="camera" class="w-3.5 h-3.5 text-cyan-300"></i>
+                        <span class="truncate">${angle.name}</span>
+                    </button>
+                `;
+            });
+
+            renderCctvSelectors();
+            lucide.createIcons();
+        }
+
+        function switchCctvAngle(imgUrl, angleName) {
+            document.getElementById('cctvImage').src = imgUrl;
+            document.getElementById('cctvSubLocation').innerText = `มุมกล้อง: ${angleName}`;
+            showToast(`เปลี่ยนมุมกล้องเป็น "${angleName}" เรียบร้อยแล้ว`);
+        }
+
+        function refreshCctvStream() {
+            const img = document.getElementById('cctvImage');
+            const currentSrc = img.src.split('?')[0];
+            img.src = `${currentSrc}?t=${new Date().getTime()}`;
+            showToast('รีเฟรชสัญญาณภาพกล้องวงจรปิดเรียลไทม์สำเร็จ');
+        }
+
+        function jumpToCctv(damKey) {
+            if (cctvDB[damKey]) {
+                loadCctvData(damKey);
+                switchTab('cctv');
+            }
+        }
+
+        function searchLocation() {
+            const query = document.getElementById('citySearch').value.trim();
+            if (!query) return;
+            
+            let foundKey = Object.keys(stationsDB).find(k => stationsDB[k].name.includes(query) || query.includes(k));
+            if (foundKey) {
+                selectStation(foundKey);
+            } else {
+                showToast(`ไม่พบข้อมูลพิกัด "${query}" แต่ระบบได้จำลองค่าอากาศเรียลไทม์ให้แล้ว`);
+                stationsDB[query] = {
+                    id: query,
+                    name: query + " (สถานีตรวจวัดท้องถิ่น)",
+                    lat: 13.0 + Math.random() * 4,
+                    lng: 100.0 + Math.random() * 4,
+                    status: "normal",
+                    statusText: "ปกติ",
+                    statusColor: "emerald",
+                    temp: Math.floor(Math.random() * 10) + 26,
+                    condition: "มีเมฆเป็นส่วนมาก",
+                    desc: "อัปเดตสภาพอากาศจากสถานีอัตโนมัติ",
+                    tempMax: 35,
+                    tempMin: 25,
+                    rainChance: "30%",
+                    humidity: "70%",
+                    wind: "10 กม./ชม.",
+                    uv: "6 (สูง)",
+                    pm25: "25 (ดี)",
+                    pmStatusColor: "text-emerald-300",
+                    forecast: [
+                        { day: "วันนี้", icon: "cloud-sun", tempMax: "35°", tempMin: "25°", rain: "30%" },
+                        { day: "ศุกร์", icon: "sun", tempMax: "36°", tempMin: "26°", rain: "10%" },
+                        { day: "เสาร์", icon: "cloud-rain", tempMax: "33°", tempMin: "24°", rain: "60%" },
+                        { day: "อาทิตย์", icon: "cloud", tempMax: "34°", tempMin: "25°", rain: "40%" },
+                        { day: "จันทร์", icon: "sun", tempMax: "35°", tempMin: "26°", rain: "15%" },
+                        { day: "อังคาร", icon: "cloud-sun", tempMax: "32°", tempMin: "24°", rain: "50%" },
+                        { day: "พุธ", icon: "sun", tempMax: "34°", tempMin: "25°", rain: "20%" }
+                    ]
+                };
+                selectStation(query);
+            }
+            document.getElementById('citySearch').value = '';
+        }
+
+        function toggleUnit() {
+            isCelsius = !isCelsius;
+            const btnText = isCelsius ? '°C / องศาเซลเซียส' : '°F / องศาฟาเรนไฮต์';
+            document.getElementById('unitBtn').innerText = btnText;
+            document.getElementById('unitBtnMob').innerText = isCelsius ? '°C' : '°F';
+            renderDashboard(currentStationKey);
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 z-50 glass-card-dark px-5 py-3 rounded-2xl border border-cyan-400/40 text-white text-xs font-semibold shadow-2xl flex items-center space-x-2 animate-fade-in';
+            toast.innerHTML = `
+                <i data-lucide="check-circle" class="w-4 h-4 text-cyan-400"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 3000);
+        }
     </script>
 </body>
 </html>
